@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite n'autorise pas les enums natifs via Prisma.
+// Les valeurs sont validées via Zod côté API.
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  birthDate    DateTime
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscription Subscription?
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id])
+
+  simulation         SimulationState?
+  financialSituation FinancialSituation?
+  riskProfile        RiskProfile?
+  portfolioConfig    PortfolioConfig?
+  complianceData     ComplianceData?
+  legalConsent       LegalConsent?
+  civilIdentity      CivilIdentity?
+
+  status             String             @default("draft")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model SimulationState {
+  id                String            @id @default(cuid())
+  subscriptionId    String            @unique
+  subscription      Subscription      @relation(fields: [subscriptionId], references: [id])
+
+  productType       String
+  projectGoal       String
+  proStatus         String
+  incomeRange       String
+  investmentHorizon String
+  initialAmount     Decimal
+  monthlyAmount     Decimal
+}
+
+model FinancialSituation {
+  id                    String         @id @default(cuid())
+  subscriptionId        String         @unique
+  subscription          Subscription   @relation(fields: [subscriptionId], references: [id])
+
+  maritalStatus         String
+  childrenCount         Int
+  wealthFinancial       Decimal
+  wealthRealEstate      Decimal
+  housingStatus         String
+
+  hasLoans              Boolean
+  loanMonthlyPayment    Decimal?
+  loanRemainingDuration String?
+}
+
+model RiskProfile {
+  id                 String            @id @default(cuid())
+  subscriptionId     String            @unique
+  subscription       Subscription      @relation(fields: [subscriptionId], references: [id])
+
+  marketDropReaction String
+  experience         Boolean
+
+  knowledgeAnswers   KnowledgeAnswer[]
+}
+
+model KnowledgeAnswer {
+  id            String      @id @default(cuid())
+  riskProfileId String
+  riskProfile   RiskProfile @relation(fields: [riskProfileId], references: [id])
+
+  questionId    String
+  isCorrect     Boolean
+}
+
+model PortfolioConfig {
+  id                String   @id @default(cuid())
+  subscriptionId    String   @unique
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id])
+
+  selectedTheme     String
+  satelliteProducts SatelliteProduct[]
+  allocations       AllocationLine[]
+}
+
+model SatelliteProduct {
+  id                    String          @id @default(cuid())
+  portfolioConfigId     String
+  portfolioConfig       PortfolioConfig @relation(fields: [portfolioConfigId], references: [id])
+
+  productCode           String
+  amount                Decimal
+  suitabilityTestPassed Boolean
+}
+
+model AllocationLine {
+  id                String          @id @default(cuid())
+  portfolioConfigId String
+  portfolioConfig   PortfolioConfig @relation(fields: [portfolioConfigId], references: [id])
+
+  fundName           String
+  assetType          String
+  label              String?
+  weightPercent      Decimal
+  diciUrl            String?
+}
+
+model ComplianceData {
+  id                    String   @id @default(cuid())
+  subscriptionId        String   @unique
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id])
+
+  isFiscalResidentFrance Boolean
+  isUSPerson             Boolean
+  tin                    String?
+
+  originOfFunds           String
+  estimatedWealth         Decimal?
+
+  professionalCategory    String
+  nafCode                 String?
+  siret                   String?
+
+  isPPE                   Boolean
+  ppeFunction             String?
+
+  beneficiaryClause       String
+}
+
+model CivilIdentity {
+  id             String   @id @default(cuid())
+  subscriptionId String   @unique
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+  firstName     String
+  lastName      String
+  birthName     String?
+  nationality   String?
+  phone         String
+  addressLine1  String
+  addressLine2  String?
+  postalCode    String
+  city          String
+  country       String
+}
+
+model LegalConsent {
+  id               String   @id @default(cuid())
+  subscriptionId   String   @unique
+  subscription     Subscription @relation(fields: [subscriptionId], references: [id])
+
+  hasReadDocuments Boolean
+  acceptedAt       DateTime?
+  documentsVersion String
+}
