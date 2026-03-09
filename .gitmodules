@@ -1,0 +1,3 @@
+[submodule "immo-ai"]
+	path = immo-ai
+	url = https://github.com/kangzhang-Produit/immo-ai-.git
